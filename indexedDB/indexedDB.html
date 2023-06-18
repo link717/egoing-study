@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <script>
+      const dbReq = indexedDB.open('opentutorials', 2);
+      let db;
+      dbReq.addEventListener('success', function (event) {
+        db = event.target.result;
+      });
+      // CRUD 작업을 할 때에도 에러 이벤트를 개별적으로 처리할 수 있다.
+      dbReq.addEventListener('error', function (event) {
+        const error = event.target.error;
+        console.log('error', error.name);
+      });
+
+      // indexedDB의 버전이 바뀌면 호출된다.
+      dbReq.addEventListener('upgradeneeded', function (event) {
+        db = event.target.result;
+        // 처음 데이터베이스를 생성하면 버전은 0이다.
+        let oldVersion = event.oldVersion;
+        if (oldVersion < 1) {
+          // id: keyPath로 설정하면 id를 통해 데이터를 관리할 수 있다.
+          // autoIncrement: true로 설정하면 id가 자동으로 증가한다.
+          db.createObjectStore('topics', { keyPath: 'id', autoIncrement: true });
+        }
+        if (oldVersion < 2) {
+          db.createObjectStore('topics2', { keyPath: 'id', autoIncrement: true });
+        }
+      });
+    </script>
+
+    <input
+      type="button"
+      value="add"
+      onclick="
+            let store = db.transaction('topics', 'readwrite').objectStore('topics');
+            let addReq = store.add({
+                title:prompt('title?'),
+                body:prompt('body?')
+            });
+            addReq.addEventListener('success', function(event){
+                console.log(event);
+                // event.target.result는 추가된 데이터의 id를 가리킨다.
+                console.log(event.target.result)
+            });
+        "
+    />
+    <input
+      type="button"
+      value="get"
+      onclick="
+            let id = Number(prompt('?id'));
+            // readonly로 설정하면 읽기만 가능하다. 성능이 향상된다.
+            let store = db.transaction('topics', 'readonly').objectStore('topics');            
+            let getReq = store.get(id);
+            // let getAllReq = store.getAll(); // 데이터가 많으면 성능이 떨어진다.
+            getReq.addEventListener('success', function(event){
+                console.log(event.target.result);
+            });
+        "
+    />
+    <input
+      type="button"
+      value="list"
+      onclick="
+            let store = db.transaction('topics', 'readonly').objectStore('topics');            
+            let getAllReq = store.getAll();
+            getAllReq.addEventListener('success', function(event){
+                console.log(event.target.result);
+            });
+        "
+    />
+    <input
+      type="button"
+      value="update"
+      onclick="
+            let store = db.transaction('topics', 'readwrite').objectStore('topics');
+            let putReq = store.put({
+                id:Number(prompt('id?')),
+                title:prompt('title?'),
+                body:prompt('body?')
+            });
+            putReq.addEventListener('success',function(event){
+                console.log(event);
+            });
+        "
+    />
+    <input
+      type="button"
+      value="delete"
+      onclick="
+            let store = db.transaction('topics', 'readwrite').objectStore('topics');
+            let deleteReq = store.delete(Number(prompt('id?')));
+            deleteReq.addEventListener('success', function(event){
+                console.log(event);
+            });
+        "
+    />
+  </body>
+</html>
